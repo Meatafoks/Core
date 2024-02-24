@@ -1,0 +1,1 @@
+export const COMPONENT_NOT_INITED = Symbol('COMPONENT_NOT_INITED');

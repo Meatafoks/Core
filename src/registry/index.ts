@@ -1,0 +1,1 @@
+export { MetafoksRegistry } from './MetafoksRegistry';

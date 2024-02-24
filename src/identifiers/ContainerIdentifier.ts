@@ -4,7 +4,7 @@ export type ContainerIdentifier = string | symbol;
 
 export function getContainerIdentifierString(containerId: ContainerIdentifier) {
     if (containerId === DEFAULT_CONTAINER_ID) {
-        return 'MetafoksContainer';
+        return 'DEFAULT';
     }
 
     return String(containerId);

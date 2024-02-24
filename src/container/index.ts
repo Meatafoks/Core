@@ -1,2 +1,2 @@
-export { MetafoksContainer, resolveComponent, registerComponent } from './MetafoksContainer';
+export { MetafoksContainer } from './MetafoksContainer';
 export { MetafoksContainerProperties } from './MetafoksContainerProperties';

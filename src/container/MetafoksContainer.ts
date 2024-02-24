@@ -19,11 +19,12 @@ import {
 } from '../identifiers';
 import { COMPONENT_NOT_INITED, DEFAULT_CONTAINER_ID } from '../symbols';
 import { merge } from '@metafoks/utils';
+import { MetadataUtils } from '../utils';
 
 export class MetafoksContainer {
-    private logger: Logger;
     public static default = new MetafoksContainer(DEFAULT_CONTAINER_ID);
 
+    private readonly logger: Logger;
     private readonly metadataMap = new Map<ComponentIdentifier<any>, ComponentMetadata<any>>();
     private properties: MetafoksContainerProperties = {
         disableRegistration: [],
@@ -54,20 +55,43 @@ export class MetafoksContainer {
     }
 
     public isEnabledRegistrationFor<T>(identifier: ComponentIdentifier<T>) {
-        if (typeof this.properties.disableRegistration === 'boolean') {
-            return !this.properties.disableRegistration;
-        }
         return !this.properties.disableRegistration?.includes(getComponentIdentifierString(identifier));
     }
 
+    /**
+     * Регистрирует класс в контроллере
+     * @param target
+     */
     public registerClass<T>(target: ComponentConstructor<T>) {
         return this.register(target, target);
     }
 
+    /**
+     * Регистрирует функции в контроллере
+     * При resolve() значения будет возвращаться не сама функция, а ее результат
+     *
+     * @Example example from testing
+     * ```
+     * const foo = () => ({ value: 15 });
+     *
+     * MetafoksContainer.default.registerFunction('foo', foo);
+     * const resolved = MetafoksContainer.default.resolve<ReturnType<typeof foo>>('foo');
+     *
+     * expect(resolved.value).toEqual(15); // ok
+     * ```
+     *
+     * @param identifier
+     * @param target
+     */
     public registerFunction<T>(identifier: ComponentIdentifier<T>, target: FunctionReturning<T>) {
         return this.register(identifier, target);
     }
 
+    /**
+     * Регистрирует значение в контроллере
+     * @param identifier
+     * @param target
+     */
     public registerValue<T>(identifier: ComponentIdentifier<T>, target: T) {
         return this.register(identifier, target);
     }
@@ -83,6 +107,11 @@ export class MetafoksContainer {
                 `disabled registration for identifier=<${getComponentIdentifierString(identifier)}>`,
             );
             return;
+        }
+
+        if (this.has(identifier)) {
+            this.logger.warn(`identifier=<${getComponentIdentifierString(identifier)}> will be overridden!`);
+            this.logger.trace(`overridden by value <${component}>`);
         }
 
         if (isConstructor(component)) {
@@ -111,39 +140,33 @@ export class MetafoksContainer {
             return metadata.value as T;
         }
 
+        const componentIdString = getComponentIdentifierString(metadata.id);
         if (isConstructor(metadata.type)) {
-            this.logger.debug(
-                `creating instance of component for identifier=<${getComponentIdentifierString(metadata.id)}>`,
-            );
-            const props = Reflect.getMetadata('design:paramtypes', metadata.type);
-            const args = this.resolveMany(props);
+            this.logger.debug(`creating component for identifier=<${componentIdString}>`);
 
-            if (args) metadata.value = new metadata.type(...args);
-            else metadata.value = new metadata.type();
+            const params = this.resolveFunctionParameters(metadata.type);
+            metadata.value = new metadata.type(...params);
         } else if (isFunctionReturning(metadata.type)) {
-            this.logger.debug(
-                `creating instance by calling component function for identifier=<${getComponentIdentifierString(metadata.id)}>`,
-            );
-            // const props = Reflect.getMetadata('design:paramtypes', metadata.type);
+            this.logger.debug(`creating component function for identifier=<${componentIdString}>`);
+
             metadata.value = metadata.type();
         } else {
-            this.logger.debug(
-                `creating instance by setting component object for identifier=<${getComponentIdentifierString(metadata.id)}>`,
-            );
+            this.logger.debug(`creating component object for identifier=<${componentIdString}>`);
+
             metadata.value = metadata.type as T;
         }
 
-        if (metadata.value === COMPONENT_NOT_INITED) {
-            throw new Error('something went wrong');
-        }
         return metadata.value;
     }
 
-    private resolveMany(obj: any) {
-        if (obj instanceof Array) {
-            return obj.map(value => this.resolve(value));
-        }
-        return null;
+    /**
+     * Возвращает разрешенные параметры функции (в той же последовательности)
+     * @param fn
+     * @private
+     */
+    private resolveFunctionParameters(fn: Function) {
+        const props = MetadataUtils.getFunctionParametersTypes(fn);
+        return props.map(value => this.resolve(value));
     }
 
     private createComponentMetadata<T>(
@@ -156,12 +179,34 @@ export class MetafoksContainer {
             value: COMPONENT_NOT_INITED,
         };
     }
-}
 
-export function registerComponent<T>(identifier: ComponentIdentifier<T>, component: T) {
-    return MetafoksContainer.default.register(identifier, component);
-}
+    /**
+     * Удаляет компонент из контекста
+     * @param identifier
+     */
+    public dispose<T>(identifier: ComponentIdentifier<T>) {
+        this.metadataMap.delete(identifier);
+    }
 
-export function resolveComponent<T>(identifier: ComponentIdentifier<T>) {
-    return MetafoksContainer.default.resolve(identifier);
+    /**
+     * Запрещает регистрацию идентификатора компонента
+     * @param identifier
+     * @param dispose
+     */
+    public disable<T>(identifier: ComponentIdentifier<T>, dispose = false) {
+        if (dispose) this.dispose(identifier);
+        if (!this.properties.disableRegistration) this.properties.disableRegistration = [];
+        this.properties.disableRegistration.push(getComponentIdentifierString(identifier));
+    }
+
+    /**
+     * Очищает контейнер и удаляет блокировки регистраций компонентов
+     */
+    public clear() {
+        this.logger.debug('clearing container');
+
+        this.metadataMap.clear();
+        this.properties.disableRegistration = undefined;
+        this.logger.info('container cleared');
+    }
 }

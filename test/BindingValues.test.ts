@@ -1,8 +1,4 @@
-import { resolveComponent } from '../src/container/MetafoksContainer';
-import { Component } from '../src/decorators/Component';
-import { Binding } from '../src/decorators/Binding';
-import { Autowire } from '../src/decorators/Autowire';
-import { Value } from '../src/decorators/Value';
+import { Autowire, Binding, Component, MetafoksContainer, Value } from '../src';
 
 describe('test some bindings', () => {
     it('should all binding works', () => {
@@ -42,7 +38,7 @@ describe('test some bindings', () => {
             }
         }
 
-        const app = resolveComponent(App);
+        const app = MetafoksContainer.default.resolve(App);
 
         expect(app.getTestEx()).toEqual(15);
         expect(app.getConfig()).toEqual(33);

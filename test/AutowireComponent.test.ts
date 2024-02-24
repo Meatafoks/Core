@@ -1,5 +1,5 @@
 import { Component } from '../src';
-import { MetafoksContainer, resolveComponent } from '../src';
+import { MetafoksContainer } from '../src';
 import { MetafoksLogger } from '@metafoks/logger';
 import { Autowire } from '../src';
 import { Value } from '../src';
@@ -41,7 +41,7 @@ describe('try autowire component type', () => {
     }
 
     it('should get real result', () => {
-        const app = resolveComponent(App);
+        const app = MetafoksContainer.default.resolve(App);
         expect(app.getResult()).toEqual(15);
         expect(app.getResultWithConfig()).toEqual(20);
 

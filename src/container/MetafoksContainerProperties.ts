@@ -1,3 +1,3 @@
 export interface MetafoksContainerProperties {
-    disableRegistration?: string[] | boolean;
+    disableRegistration?: string[];
 }

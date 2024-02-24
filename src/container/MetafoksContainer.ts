@@ -18,7 +18,7 @@ import {
     getContainerIdentifierString,
 } from '../identifiers';
 import { COMPONENT_NOT_INITED, DEFAULT_CONTAINER_ID } from '../symbols';
-import { merge } from '../utils';
+import { merge } from '@metafoks/utils';
 
 export class MetafoksContainer {
     private logger: Logger;

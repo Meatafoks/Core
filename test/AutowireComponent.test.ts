@@ -1,8 +1,8 @@
-import { Component } from '../src/decorators/Component';
-import { MetafoksContainer, resolveComponent } from '../src/container/MetafoksContainer';
+import { Component } from '../src';
+import { MetafoksContainer, resolveComponent } from '../src';
 import { MetafoksLogger } from '@metafoks/logger';
-import { Autowire } from '../src/decorators/Autowire';
-import { Value } from '../src/decorators/Value';
+import { Autowire } from '../src';
+import { Value } from '../src';
 
 interface Config {
     value: number;

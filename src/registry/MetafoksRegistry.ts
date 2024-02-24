@@ -7,6 +7,14 @@ export class MetafoksRegistry {
     private static readonly logger = createLogger(MetafoksRegistry);
     private static readonly containersMap = new Map<ContainerIdentifier, MetafoksContainer>();
 
+    public static clear() {
+        const defaultValue = this.containersMap.get(DEFAULT_CONTAINER_ID);
+        this.containersMap.clear();
+
+        if (defaultValue) this.containersMap.set(defaultValue.id, defaultValue);
+        this.logger.info('registry is cleared');
+    }
+
     public static has(id: ContainerIdentifier) {
         return this.containersMap.has(id);
     }
